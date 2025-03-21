@@ -1,0 +1,14 @@
+@import "tailwindcss";
+
+/* Optional: custom styles */
+body {
+  @apply transition-colors duration-300;
+}
+
+:root {
+  --font-jetbrains: 'JetBrains Mono', monospace;
+}
+
+body {
+  font-family: var(--font-jetbrains);
+}
