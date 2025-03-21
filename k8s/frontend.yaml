@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: token-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: token-frontend
+  template:
+    metadata:
+      labels:
+        app: token-frontend
+    spec:
+      containers:
+        - name: token-frontend
+          image: elmimoha15/token-frontend:latest
+          ports:
+            - containerPort: 3000
+          env:
+            - name: NEXT_PUBLIC_API_BASE_URL
+              value: "http://localhost:30080/api/v1"  
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: token-frontend-service
+spec:
+  type: NodePort
+  selector:
+    app: token-frontend
+  ports:
+    - port: 3000
+      targetPort: 3000
+      nodePort: 30000 

@@ -1,0 +1,45 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+  DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+  FRONTEND_IMAGE: ${{ secrets.DOCKER_USERNAME }}/token-frontend
+  BACKEND_IMAGE: ${{ secrets.DOCKER_USERNAME }}/token-backend
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Log in to Docker Hub
+        run: echo "${DOCKER_PASSWORD}" | docker login -u "${DOCKER_USERNAME}" --password-stdin
+
+      - name: Build and push backend Docker image
+        run: |
+          docker build -t $BACKEND_IMAGE:latest ./backend
+          docker push $BACKEND_IMAGE:latest
+
+      - name: Build and push frontend Docker image
+        run: |
+          docker build -t $FRONTEND_IMAGE:latest ./frontend
+          docker push $FRONTEND_IMAGE:latest
+
+      - name: SSH and deploy to MicroK8s
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.REMOTE_HOST }}
+          username: ${{ secrets.REMOTE_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/${{ secrets.REMOTE_USER }}/apps/token-generator
+            git pull origin main
+            microk8s kubectl apply -f k8s/backend-deployment.yaml
+            microk8s kubectl apply -f k8s/frontend-deployment.yaml
